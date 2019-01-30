@@ -27,13 +27,11 @@
 
 ## Overview
 
-In today's lab we are going to get to know more about the `SELECT` statement and a bit about Database Design Theory.  At this point you should be able to do `SELECT`s that involve multiple tables and join them together with a `WHERE` clause, or explicitly with a `LEFT` or `RIGHT JOIN`.   You should also be able to do some nontrivial filtering involving the `WHERE` clause.  At the moment you have a toy version of the inventory table and a toy version of the prices table.  Today's lab will require SEVERAL tables and mucking about... so you only need **ONE copy per group**.  You will have to be sure to tell me where to look for your data, and who is in your group, so submit that information in canvas (be sure your repository has all the necessary files too).
+In today's lab we are going to get to know more about the `SELECT` statement and a bit about Database Design Theory.  At this point you should be able to do `SELECT`s that involve multiple tables and join them together with a `WHERE` clause, or explicitly with a `LEFT` or `RIGHT JOIN`.   You should also be able to do some nontrivial filtering involving the `WHERE` clause.
 
-You are going to be making a few tables to play with, so just in case you make a few mistakes and don't want to `DROP` the table and start over, read this before continuing:
+At the moment each of you should have a toy version of the inventory table and a toy version of the prices table. This lab will require SEVERAL tables so we'll do it in groups, and you only need **ONE copy per group**.  You will have to be sure to tell me on Canvas where to look for your data so submit that information on Canvas along with the other necessary files (see below and the [Checklist](#checklist-of-what-to-do)).
 
-<https://mariadb.com/kb/en/alter-table/>
-
-(You don't really know what an index is yet... but you will soon)
+You are going to be making several tables to play with, so just in case you make a few mistakes and don't want to `DROP` the table and start over have a look at [the MariaDB documentation on _altering_ tables](https://mariadb.com/kb/en/library/alter-table/) before continuing. (You don't really know what an index is yet, but you will soon, so don't worry about that.)
 
 As you play with the following commands think about what it would take to design a database application that would be used by a store.  Such an application would need to be able to keep track of what happens at each cash register and have a back-office function that allowed reports about sales and the current inventory.  
 
@@ -61,7 +59,7 @@ Here are a few questions to ask yourself:
 
 That's a lot to think about, and we are only going to focus on a small subset of a complete system... but it would be nice to design our subsystem carefully enough that it could be integrated into something larger without too much trouble.
 
-I would like each group to start a document (about a page long) detailing a rough outline of what you think would be necessary-- we'll flesh this out later.  Put your document in your repository and call it `speculation.txt`. 
+I would like each group to start a document (about a page long) detailing a rough outline of what you think would be necessary – we'll flesh this out later.  Put your document in your repository and call it `Speculation.md`.
 
 ## A more in-depth set of exercises
 
@@ -69,40 +67,42 @@ You are now going to create several tables that will help you develop a deeper u
 
 ### Some simple tables
 
-Let's create a table called `master` that will keep track of each transactions on a global level
-
-You should make it with the following fields:
+Let's create a table called `master` that will keep track of each transactions on a global level. You should make it with the following fields:
 
 field    | data-type      | notes
 ---------|----------------|-----------
-start    | datetime       | for keeping track of when the interaction began
-stop     | datetime       | and for keeping track of when it's done
-tid      | integer        | unique id for keeping track of items in all transactions (should be the primary key)
-register | integer        | numeric id of cash register WHERE transaction occurred
-user     | text           | who was running the till
-total    | decimal with two places | (the total amount of money received (or refunded))
+start    | datetime       | to track when the interaction began
+stop     | datetime       | and to track when it was completed
+tid      | integer        | unique id for keeping track of transactions (should be the primary key in this table)
+register | integer        | numeric id of cash register where transaction occurred
+user     | text           | name of clerk who was running the till
+total    | decimal with two places | the total amount of money received (or refunded) in this transaction
 	
 Let call the table for keeping track of the items in a transaction `t_items`:
 
 field    | data-type               | notes
 ---------|-------------------------|-------------------------------------------
-tid      | same as master table    | allows the individual item to be associated to the till transaction
-pid      | same as inventory table | allows the individual item to be associated with their description
-price    | decimal                 |in some ways we're breaking normalization by doing this, but a coke might cost 1.92 one day or it might be on sale for .75 another day... so arguably we're not.  Plus-- someone might be buying TWO cokes instead of one)
-gid      | integer                 | (group id) we need a way to deal with combo's and this will lets us keep track of which items are grouped
-amount   | decimal                 |  (how many).  We might need 
+tid      | same as master table    | allows the individual item to be associated to the transaction in the `master` table
+pid      | same as inventory table | allows the individual item to be associated with their price, description, etc.
+price    | decimal                 | price for this (set of) item(s)
+gid      | integer                 | group id for combos
+amount   | decimal                 | how many of this item were purchased in this transaction 
+
+In some ways we're breaking normalization by including the `price` field because that could be calculated using the `amount` field and information in the `prices` table. (See the material on normalization below for more on these kinds of _functional dependencies_.) We'll include it, though, because a bottle of pop might cost \$1.92 one day, while it's on sale for \$0.75 another day, so there is an argument for having this field.
+
+The `gid` field allows us to create _combos_ where a group of items are sold together for a (presumably) reduced price. Thus presumably an entry in `t_items` will have exactly one of a `pid` or a `gid`, but not both.
 	
 Consider a table called `combos` (read a bit further before creating this):
 
 field    |Description
 ---------|---------------------
-uid      |  Unique Id 
-comboName|  Name of the combo
-item     |  Should correspond to a product id in inventory
-price    |  The amount of the combo
-comboCode|  A number unique to the combo
+uid      |  unique id (primary key) 
+comboName|  name of the combo
+item     |  should correspond to a product id in inventory
+price    |  the amount of the combo
+comboCode|  a number unique to the combo
 	
-We could keep track of combos  with this table.  It might look like this:
+We could keep track of combos with a table like this:
 
 uid |  comboName         |   item   | price  | comboCode
 ----|--------------------|----------|--------|---------------   
@@ -111,19 +111,21 @@ uid |  comboName         |   item   | price  | comboCode
 3   |Quacker Jack special|2|2.15|2
 4   |Quacker Jack special|17|2.15|2
 5   |Quacker Jack special|191|2.15|2
-	
-Okay… NOW build that table but give it a name like `poorDesign`.  Add the 5 records indicated above, but use id's from your own inventory table (we will fix things soon… or more accurately *you* will).
+
+This design violates some of the normal form rules discussed later in this lab, so go ahead and build that table but give it a name like `poorDesign`; you'll tidy that up in subsequent labs. Add the 5 records indicated above, but use id's from your own inventory table.
 
 ### Quick Check 
 
-You are not turning this in... but you still need to do it.  Before we put things in order, let's check your understanding of last classes material:
+You are not turning this in... but you still need to do it.  Before we put things in order, let's check your understanding of the material from the previous lab.
 
-Construct a query that links together data from the `poorDesign` table, and from your `inventory` table in order to provide the following information:
-* comboName, 
-* comboPrice, and
-* item.
+Start by constructing a query that links together data from the `poorDesign` table, and from your `inventory` table in order to provide the following information:
+
+* `comboName` 
+* `comboPrice`
+* `item`
 
 So, for example, if item 2 was `Brawndo`, and item 3 was `Human Kidneys`, then your query should return the following:
+
 ```
 Double Slam	1.99	Brawndo
 Double Slam	1.99	Human Kidneys
@@ -131,23 +133,20 @@ Double Slam	1.99	Human Kidneys
 
 I want the columns of your query to have the names `combo`, `price`, `item`.  You may find it helpful to review the usage of the keyword `AS` in the documentation on the `SELECT` statement.
 
-You really must be tired of all those `INSERT` statement by now (I know I am), so read this:
-
-<https://mariadb.com/kb/en/load-data-infile/>
-
-Pay special attention to the effect of the word `LOCAL`... it's the difference between your command work, and failing.
+You really must be tired of all those `INSERT` statement by now (I know I am). You might then find [the MariaDB documentation on loading data from a file](https://mariadb.com/kb/en/library/load-data-infile/) useful. Pay special attention to the effect of the word `LOCAL`... it's the difference between your command succeeding and failing.
 
 Now let's get even MORE CREATIVE.  Create a query that links information from `poorDesign`, `inventory`, and `price` to display the following information:
-* comboName, 
-* comboPrice, 
-* item, and 
-* itemPrice
+
+* `comboName` 
+* `comboPrice` 
+* `item`
+* `itemPrice`
 
 This is the first time you've done a query that uses three tables.  
 
 Once you get the query to run correctly, you have implicitly begun to understand the secret to something called **data normalization**.  What you have done with your query is shown that redundant (or duplicated) information in your output can be generated, as necessary, by a good query.  
 
-If you don't normalize your data (more on that very soon), then you run the risk of creating an **Anomaly**-- even if your framework is amazing and double checks everything very carefully-- bad things can still happen accidentally;  Suppose your internet connection is cut off in the middle of updating?  However, if your data-design is good (which often means, among other things, that there is no redundant information in any of your tables), then that can't happen-- the essential information appears in only one place and it only takes one atomic update to make a change.
+If you don't normalize your data (more on that very soon), then you run the risk of creating an **anomaly**, where data that's duplicated in different places can get "out of sync". Even if your framework is amazing and double checks everything very carefully bad things can still happen accidentally.  Suppose, for example, your internet connection is cut off in the middle of updating. If your data-design is good (which often means, among other things, that there is no redundant information in any of your tables), then anomalies can't happen because the essential information appears in only one place and it only takes one atomic update to make a change.
 
 ## Anomalies
 
@@ -504,7 +503,7 @@ Let's break that down:
 ## Checklist of what to do
 
 - [ ] Indicate your group name, members in a file named `group.txt` that gets uploaded with your repository
-- [ ] Create about a page's worth of speculation on a point of sales system in a file named `speculations.txt` (This should go well beyond what you turned in for `lab2.txt` and you will lose points if the depth is insufficient)
+- [ ] Create about a page's worth of speculation on a point of sales system in a file named `Speculations.md` (This should go well beyond what you turned in for Lab 2 and you will lose points if the depth is insufficient)
 - [ ] Do the required checks (not turned in)
 - [ ] Do the Anomaly Exercises (one per group-- indicate WHO has the answers)
 - [ ] Each group should create their own table with the following properties:
@@ -514,6 +513,9 @@ Let's break that down:
 - [ ] Type in all (or most) of the examples in this lab
 - [ ] Indicate in Canvas which database I should search for your group's answers.
 
+Things to turn in on Canvas:
+
+- [ ] Indicate which database your group used for your answers
 
 [1] SQA's _Fundamentals of Database Design_ and _Elmasri and Navathe_  
 [2] http://web.archive.org/web/20080805014412/http://www.datamodel.org/NormalizationRules.html
