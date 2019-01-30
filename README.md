@@ -90,9 +90,7 @@ amount   | decimal                 | how many of this item were purchased in thi
 
 In some ways we're breaking normalization by including the `price` field because that could be calculated using the `amount` field and information in the `prices` table. (See the material on normalization below for more on these kinds of _functional dependencies_.) We'll include it, though, because a bottle of pop might cost \$1.92 one day, while it's on sale for \$0.75 another day, so there is an argument for having this field.
 
-The `gid` field allows us to create _combos_ where a group of items are sold together for a (presumably) reduced price. Thus presumably an entry in `t_items` will have exactly one of a `pid` or a `gid`, but not both.
-	
-Consider a table called `combos` (read a bit further before creating this):
+The `gid` field allows us to create _combos_ where a group of items are sold together for a (presumably) reduced price. Consider a table called `combos` (read a bit further before creating this):
 
 field    |Description
 ---------|---------------------
@@ -101,16 +99,23 @@ comboName|  name of the combo
 item     |  should correspond to a product id in inventory
 price    |  the amount of the combo
 comboCode|  a number unique to the combo
-	
+
 We could keep track of combos with a table like this:
 
-uid |  comboName         |   item   | price  | comboCode
+uid | comboName         |   item   | price  | comboCode
 ----|--------------------|----------|--------|---------------   
-1   |  Double Slam       |         2|    1.99| 1
-2   |Double Slam         |3|1.99|1
-3   |Quacker Jack special|2|2.15|2
-4   |Quacker Jack special|17|2.15|2
-5   |Quacker Jack special|191|2.15|2
+1   | Double Slam       |         2|    1.99| 1
+2   | Double Slam         |3|1.99|1
+3   | Quacker Jack special|2|2.15|2
+4   | Quacker Jack special|17|2.15|2
+5   | Quacker Jack special|191|2.15|2
+
+The sale of, for example, three `Double Slam`s would create a single entry in `master` but _two_ entries in `t_items`. Assuming the transaction id (`tid`) for this transaction was 57, the two entries in `t_items` might look like:
+
+tid | pid | price | gid | amount
+----|-----|-------|-----|-------
+57  |   2 |  1.99 |   1 | 3
+57  |   3 |  1.99 |   1 | 3
 
 This design violates some of the normal form rules discussed later in this lab, so go ahead and build that table but give it a name like `poorDesign`; you'll tidy that up in subsequent labs. Add the 5 records indicated above, but use id's from your own inventory table.
 
