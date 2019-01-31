@@ -59,7 +59,7 @@ Here are a few questions to ask yourself:
 
 That's a lot to think about, and we are only going to focus on a small subset of a complete system... but it would be nice to design our subsystem carefully enough that it could be integrated into something larger without too much trouble.
 
-I would like each group to start a document (about a page long) detailing a rough outline of what you think would be necessary – we'll flesh this out later.  Put your document in your repository and call it `Speculation.md`.
+On the same Google Doc that has the info on which database your work in is, I would like each group to write a page or so providing a rough outline of what you think would be necessary – we'll flesh this out later. You will then submit the link to that GDoc on Canvas.
 
 ## A more in-depth set of exercises
 
@@ -319,7 +319,7 @@ Data can be categorized based upon the amount of redundancy contained within the
 
 ### First Normal Form
 
-Data is in **First Normal Form (1NF)** if the fields don't contain multiple values and if the rows are not duplicated.  This is frequently described as **data is atomic** (there is some controversy over this definition).  This is best understood with an example
+Data is in **First Normal Form (1NF)** if the fields don't contain multiple values and if the rows are not duplicated (i.e., the rows form a _set_).  This is frequently described as **data is atomic** (there is some controversy over this definition).  This is best understood with an example
 
 Here is a table in first normal form:
 
@@ -354,13 +354,13 @@ id  | book
 
 #### Easy Conversion to First Normal Form
 
-There are standard guidelines for _normalizing_ database designs, i.e., changing them so that they are in first (or second or third) normal form.[^how-to-normalize] To convert a design so that it is in 1NF, for example, you want to _eliminate repeating groups_, i.e., get rid of situations where a single column is being used to hold one or more pieces of data, like "_Foundation_, _Jon Carter_, _Warlord of Mars_" above. We acoomplish this by making a separate table for each set of related attributes and give each table a primary key.  The separate tables allow the non-atomic data in an attribute to be separated into different records, and the primary key ensures that no two records are repeated in their entirety.
+There are standard techniques for _normalizing_ database designs, i.e., changing them so that they are in first (or second or third) normal form.[^how-to-normalize] To convert a design so that it is in 1NF, for example, you want to _eliminate repeating groups_, i.e., get rid of situations where a single column is being used to hold one or more pieces of data, like "_Foundation_, _Jon Carter_, _Warlord of Mars_" above. We acoomplish this by making a separate table for each set of related attributes and give each table a primary key.  The separate tables allow the non-atomic data in an attribute to be separated into different records, and the primary key ensures that no two records are repeated in their entirety.
 
 ### Second Normal Form
 
 Tables in **Second Normal Form (2NF)** are also in first normal form.  In addition, "no non-prime attribute is dependent on any proper subset of any candidate key of the table" (or, more concisely, there are no partial dependencies in the table).  
 
-Another way to think about it, is that the *entire* candidate key should be necessary to deduce any non-prime attributes.
+Another way to think about it is that the *entire* candidate key should be necessary to deduce any non-prime attributes.
 
 Again, this is a bit easier to see with an example.  Here is a table that is NOT in second normal form:
 
@@ -376,9 +376,11 @@ Again, this is a bit easier to see with an example.  Here is a table that is NOT
 </table>
 
 This is clearly in First Normal Form:  The attributes are atomic and there are no repeated rows.   To figure out if the table is in second normal form we need to identify any partial dependencies.  We start by finding all 
-non-prime attributes (if any) by first identifying all the candidate keys.  For this data there is only one: `{Employee,Skill}`.  That means `Current Work Location` is a non-prime attribute.  (Tables without non-prime attributes are automatically in second normal form).  Having identified all non-prime attributes, we check to see if any are functionally dependent upon *any* subset of *any* candidate key.  This check is pretty easy – there's only one non-prime attribute, and only two subsets.  It's pretty clear that `employee->work location` (knowing `employee` allows us to determine `work location`) so `work location` is functionally dependent upon `employee`.  On the other hand, `work location` is NOT functionally dependent upon `Skill` since the skill 'Typing' occurs with '73 Industrial Way' and with '114 Main Street'.  The functional dependency of a non-prime attribute upon a proper subset of a candidate key means the table is **not** in second normal form.
+non-prime attributes (if any) by first identifying all the candidate keys.  For this data there is only one: `{Employee, Skill}`.  That means `Current Work Location` is a non-prime attribute.  (Tables without non-prime attributes are automatically in second normal form). 
 
-I would like to, once more, point out the difference between using data and using "situational knowledge" to make inferences about functional dependencies .  We are using the table (data) to infer something about the functional dependencies by assuming that "if the data doesn't violate the rule – no new data will every violate it".  This may, or may not, be a good idea.  If the company employing this database has employees working in only one assigned location, then the situation supports the conclusion.  On the other hand, if some employees work in different locations during different shifts, then there is **not** a functional dependency of the form `employee->work location`.  I'm not trying to overwhelm you – I just want to make certain you are clear about the subtleties.
+Having identified all non-prime attributes, we check to see if any are functionally dependent upon *any* subset of *any* candidate key.  This check is pretty easy – there's only one non-prime attribute (`Current Work Location`), and only two (proper) subsets (`{Employee}` and `{Skill}`).  It's pretty clear that `Employee->Current Work Location` (knowing `Employee` allows us to determine `Current Work Location`) so `Current Work Location` is functionally dependent upon `Employee`.  On the other hand, `Current Work Location` is NOT functionally dependent upon `Skill` since the skill 'Typing' occurs with both '73 Industrial Way' and with '114 Main Street'.  The functional dependency of a non-prime attribute (`Current World Location`) upon a proper subset of a candidate key (`{Employee}`) means the table is **not** in second normal form.
+
+It's important here to understand the difference between using data and using "situational knowledge" to make inferences about functional dependencies. In our discussion of the `Employees' Skill` table above, we are using the table (data) to infer something about the functional dependencies by assuming that "if the data doesn't violate the rule – no new data will every violate it".  This may, or may not, be a good idea.  If the company employing this database has employees working in only one assigned location, then the situation supports the conclusion that `Current Work Location` depends on `Employee`.  On the other hand, if some employees work in different locations during different shifts, then there is **not** a functional dependency of the form `Employee->Current Work Location`.  I'm not trying to overwhelm you – I just want to make certain you are clear about the subtleties.
 
 More informally, we look to see if a non-prime attribute depends upon only part of a multi-valued key and remove it into a separate table if it does:
 
@@ -403,27 +405,26 @@ More informally, we look to see if a non-prime attribute depends upon only part 
 	
 #### Easy conversion to Second Normal Form
 
-If an attribute (non-prime) depends on only part of a multi-valued key, remove it to a separate table.
+If a non-prime attribute depends on only part of a multi-valued candidate key, move it to a separate table.
 
 ### Third Normal Form
 
-Table in **Third Normal Form (3NF)** are also in 2NF.  Their defining characteristic is that *every non-prime attribute is non-transitively dependent upon every super key*.  That was one of the original definitions… I think the following equivalent definition is a bit easier to think about, and quite a bit easier for checking:
+Tables in **Third Normal Form (3NF)** are also in 2NF.  Their defining characteristic is that *every non-prime attribute is non-transitively dependent upon every super key*.  That was one of the original definitions; I think the following equivalent definition is a bit easier to think about, and quite a bit easier for checking:
 
 For **every** functional dependency `X->A`, **at least one** of the following holds:
 
-* X contains A (this is a trivial functional dependency)
+* X (as a set of attributes) is a superset of A (this is a trivial functional dependency)
 * X is a superkey
-* Every elt in A *set minus* X is a prime attribute
+* Every attribute $a \in A - X$ is a prime attribute 
+   * Here $A-X$ is the _set difference_ between $A$ and $X$, i.e., the elements of $A$ not in $X$.
 
 Here are a few things to help you make sense of these requirements.  First, recall that the components of a functional dependency of the form `X->A` are *sets* of attributes.  In other words `X` is a set of fields and `A` is a set of fields.
 
 The first possibility in the list above means that all the attributes in `A` are also in `X`.  (So you can ignore functional dependencies that are set inclusions).
 
-The second possibility in the list occurs when the attributes in `A` are functionally dependent upon `X`.  This is equivalent to saying that we can ignore all functional dependencies where distinct values of attributes in `X` are unique to the records.
+The second possibility in the list occurs when the attributes in `A` are functionally dependent upon `X`. This means that all the attributes in `A` are determined by (a subset of) the fields in `X`; if they weren't then `X` couldn't be a superkey. This is equivalent to saying that we can ignore all functional dependencies where distinct values of attributes in `X` are unique to the records.
 
-The third possibility is saying that attributes in `A` that are NOT in `X` are all prime.
-
-Note:  That having tables without non-prime attributes automatically makes this true.  
+The third possibility is saying that attributes in `A` that are NOT in `X` are all prime. Note: That having tables without non-prime attributes automatically makes this true.
 
 Here is an example of a table that is in second normal form but that is NOT in third normal form:
 
@@ -439,6 +440,7 @@ Here is an example of a table that is in second normal form but that is NOT in t
 As always, the key to checking normality lies in figuring out the candidate keys.  No individual attribute suffices for this table, so we turn our attention to pairs.  Let's start by consider pairs containing `Tournament`.  The only replication keeping `Tournament` from being a key in its own right is 'Indiana Invitational', which occurs twice.  
 
 The pair `{Tournament,Year}` is a candidate key.  The data potentially allows for other candidate keys, but situationally speaking, this is the only candidate key.  From this point of view, that means that the attribute `Winner Date of Birth` is NOT part of any candidate key and hence a non-prime attribute.  Notice the following:
+
 * `{Tournament, Year} -> Winner`
 * `Winner does NOT determine {Tournament,Year}`  
 * `Winner -> Winner Date of Birth`.
@@ -447,13 +449,11 @@ Thus the `Winner Date of Birth` is *transitively dependent* upon the candidate k
 
 I'm going to quote Wikipedia's article on this topic:
 
-```
-The breach of 3NF occurs because the non-prime attribute Winner Date of Birth is transitively dependent on the candidate key {Tournament, Year} via the non-prime attribute Winner. The fact that Winner Date of Birth is functionally dependent on Winner makes the table vulnerable to logical inconsistencies, as there is nothing to stop the same person from being shown with different dates of birth on different records.
-```
+> The breach of 3NF occurs because the non-prime attribute `Winner Date of Birth` is transitively dependent on the candidate key `{Tournament, Year}` via the non-prime attribute `Winner`. The fact that `Winner Date of Birth` is functionally dependent on `Winner` makes the table vulnerable to logical inconsistencies, as there is nothing to stop the same person from being shown with different dates of birth on different records.
 
 #### Easy Way to make a table Third Normal Form
 
-If attributes do not contribute to a description of the key, remove them to a separate table.
+If attributes do not contribute to a description of the key, remove them to a separate table. In this case the key is `{Tournament, Year}` is the key. `Winner Date of Birth`, however, doesn't tell us anything (directly) about either the `Tournament` or the `Year`; it describes the `Winner`, which isn't part of the key. So let's move that info to a separate table:
 
 <table>
 <tr><th colspan=3 align="center">Tournament Winners</th></tr>
@@ -477,39 +477,36 @@ If attributes do not contribute to a description of the key, remove them to a se
 This is also known as 3.5NF.  This form is only slightly stronger than Third Normal Form, but all redundancy based upon functional dependency has been removed.
 
 The key idea is that a table is in BCNF if and only if for every dependency `X->Y`, at least one of the following conditions holds:
-* `X->Y` is a trivial functional dependency (Y &#8834; X)
+
+* `X->Y` is a trivial functional dependency ($X \supset Y$)
 * `X` is a super key.
 
 Notice that this definition contains the first two items in the list that defined 3NF.  Each of the list items was an allowed *possibility*.  We have removed one of the possibilities, so the requirements are more stringent and harder to meet.
 
-There are a lot of subtleties about this particular form:
-
-<https://en.wikipedia.org/wiki/Boyce%E2%80%93Codd_normal_form>
+There are a lot of subtleties about this particular form; see [Wikipedia's discussion](https://en.wikipedia.org/wiki/Boyce%E2%80%93Codd_normal_form) for more.
 
 ### Summary of Normal Forms
 
 There is a rather pithy way to help remember the first three (and a half) normal forms.  It's attributed to Bill Kent: 
 
-```
-"[Every] non-key [attribute] must provide a fact about the key, the whole key, and nothing but the key... so help me Codd".
-```
+> [Every] non-key [attribute] must provide a fact about the key, the whole key, 
+> and nothing but the key... so help me Codd"
 
 Let's break that down:
 
 * **the key** refers to first normal form:  The table must have a key (and the data  must be atomic)
 * **the whole key** refers to second normal form:  every non-key attribute (non-prime) must depend upon the **entire** candidate key
-* **And nothing but the key** refers to third normal form:  the non-prime attributes need to depend *only* upon the keys and not upon something else (The non-symmetry in the first step of a transitive dependence `A->B->C`, ensures that `B` is not a candidate key, so the existence of such things violates 3NF).
+* **And nothing but the key** refers to third normal form:  the non-prime attributes need to depend *only* upon the keys and not upon something else. (The non-symmetry in the first step of a transitive dependence `A->B->C`, ensures that `B` is not a candidate key, so the existence of such things violates 3NF).
 * **So help me Codd** refers to BCNF:  Everything else has to hold, but it must hold for ALL attributes, not just non-prime ones.
 
 ## Checklist of what to do
 
-Things to turn in on Canvas:
+Things to include on a group Google Doc turn in on Canvas:
 
 - [ ] Indicate which database your group used for your answers
-
-Things that will be in your GitHub repo:
-
-- [ ] Your group's thoughts on potential DB design in `Speculations.md`.
+- [ ] Share your group's thoughts on potential DB design
+- [ ] Make sure everyone in your group has edit permissions on the document
+- [ ] Submit a link to the document on Canvas that provides **comment priviledges** to people with that link
 
 Things we'll look for in the database:
 
@@ -520,7 +517,7 @@ Things we'll look for in the database:
     - [ ] A table in second normal form, but not in third normal form
     - [ ] A table in third normal form, but not in BNC form
 
-Things you should do, but which there's nothing to "turn in":
+Things you should do, but where there's nothing to "turn in":
 
 - [ ] [The quick check exercises](#quick-check)
 - [ ] Type in all (or most) of the examples in this lab
