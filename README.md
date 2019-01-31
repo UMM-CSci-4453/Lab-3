@@ -415,8 +415,8 @@ For **every** functional dependency `X->A`, **at least one** of the following ho
 
 * X (as a set of attributes) is a superset of A (this is a trivial functional dependency)
 * X is a superkey
-* Every attribute $a \in A - X$ is a prime attribute 
-   * Here $A-X$ is the _set difference_ between $A$ and $X$, i.e., the elements of $A$ not in $X$.
+* Every attribute _a_ ∈ A - X is a prime attribute 
+   * Here A-X is the _set difference_ between A and X, i.e., the elements of A not in X.
 
 Here are a few things to help you make sense of these requirements.  First, recall that the components of a functional dependency of the form `X->A` are *sets* of attributes.  In other words `X` is a set of fields and `A` is a set of fields.
 
@@ -478,7 +478,7 @@ This is also known as 3.5NF.  This form is only slightly stronger than Third Nor
 
 The key idea is that a table is in BCNF if and only if for every dependency `X->Y`, at least one of the following conditions holds:
 
-* `X->Y` is a trivial functional dependency ($X \supset Y$)
+* `X->Y` is a trivial functional dependency (X ⊃ Y)
 * `X` is a super key.
 
 Notice that this definition contains the first two items in the list that defined 3NF.  Each of the list items was an allowed *possibility*.  We have removed one of the possibilities, so the requirements are more stringent and harder to meet.
